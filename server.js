@@ -5,8 +5,6 @@
 const express = require('express');
 const app = express();
 
-const {URL}=url;
-
 // enable CORS (https://en.wikipedia.org/wiki/Cross-origin_resource_sharing)
 // so that your API is remotely testable by FCC 
 const cors = require('cors');
@@ -41,7 +39,7 @@ app.get("/api/:date",(req,res) =>  {
   const input=req.params.date;  //the date input by the user in the :date placeholder
   input.toString();
   inputArray.push(input.split(""));
-  console.log(isNaN(input));
+  console.log("input: "+input);
   const ia2= inputArray[0][2];
   const ia3= inputArray[0][3];
   const ia4= inputArray[0][4];
@@ -53,10 +51,20 @@ app.get("/api/:date",(req,res) =>  {
       discardArray[0]=inputArray[0].splice(4,1);  //pull out the hyphens
       discardArray[0]=inputArray[0].splice(6,1);
       inputArray[0]=inputArray[0].join("");
-      console.log(isNaN(inputArray[0]));
+      console.log("the input array: "+inputArray[0]);
       if (isNaN(inputArray[0])===true)  {  //check if the remainder is not a number
-        console.log("not a number!");
-        res.json({error:"Invalid Date"});
+        if (inputArray[0].toString()==="thisisnot-a-date")  {  //testing to see if this is allowed, not sure why it would be
+          const dateReturn= new Date(input);
+          const utcString= dateReturn.toUTCString();
+          inputArray[0]=inputArray[0].split("");
+        }else if (inputArray[0][8]===" "&&inputArray[0][11]===":"&&inputArray[0][14]===":")  {  //check if time is included in the input
+          const dateReturn= new Date(input);
+          const utcString= dateReturn.toUTCString();
+          res.json({unix:dateReturn.getTime(),utc:utcString});  //return the json
+        }else{
+          console.log("not a number!");
+          res.json({error:"Invalid Date"});
+        }
       }
       monthArray[0]=inputArray[0].slice(4,6);
       dayArray[0]=inputArray[0].slice(6,8);
@@ -71,21 +79,21 @@ app.get("/api/:date",(req,res) =>  {
       }
       // console.log("monthArray: "+monthArray+" "+"dayArray: "+dayArray);
     }else if (ia3.toString()===" "&&ia6.toString()===" ")  {  // mmm(ex. jan) dd yyyy
-      discardArray[0]=inputArray[0].splice(0,4);
+      discardArray[0]=inputArray[0].splice(0,4);  //remove the month and spaces
       discardArray[0]=inputArray[0].splice(2,1);
       console.log(inputArray);
-      inputArray[0]=inputArray[0].join("");
-      if (isNaN(inputArray[0])===true)  {
+      inputArray[0]=inputArray[0].join("");  //join all indexes together
+      if (isNaN(inputArray[0])===true)  {  //if the remainder is not a number
         res.json({error:"Invalid Date"});
       }
       dayArray[0]=inputArray[0].slice(0,2);
-      if (dayArray>0&&dayArray<32)  {
+      if (dayArray>0&&dayArray<32)  {  //if the days are more than 0 and less than 32
         const dateReturn= new Date(input);
         const utcString= dateReturn.toUTCString();
         res.json({unix:dateReturn.getTime(),utc:utcString});
       }
     }else if (ia2.toString()===" "&&ia6.toString()===" ")  {  // dd mmm(ex. jan) yyyy
-      discardArray[0]=inputArray[0].splice(2,5);
+      discardArray[0]=inputArray[0].splice(2,5);  //remove the month and all spaces
       console.log(inputArray);
       inputArray[0]=inputArray[0].join("");
       if (isNaN(inputArray[0])===true)  {
@@ -97,14 +105,23 @@ app.get("/api/:date",(req,res) =>  {
         const utcString= dateReturn.toUTCString();
         res.json({unix:dateReturn.getTime(),utc:utcString});
       }
-    }else{
-      res.json({error:"Invalid Date"});
+    }else{  //if the validation continues
+      inputArray[0]=inputArray[0].join("");
+      console.log(inputArray[0]);
+      if (inputArray[0].indexOf("january")!==-1||inputArray.indexOf("february")!==-1||inputArray.indexOf("march")!==-1||inputArray.indexOf("april")!==-1||inputArray.indexOf("may")!==-1||inputArray.indexOf("june")!==-1||inputArray.indexOf("july")!==-1||inputArray.indexOf("august")!==-1||inputArray.indexOf("september")!==-1||inputArray.indexOf("october")!==-1||inputArray.indexOf("november")!==-1||inputArray.indexOf("december")!==-1)  {
+        console.log("month confirmed");  //if one of the months are listed in the input
+        const dateReturn= new Date(input);
+        const utcString= dateReturn.toUTCString();
+        res.json({unix:dateReturn.getTime(),utc:utcString});
+      }else{
+        res.json({error:"Invalid Date"});
+      }
     }
   }else{  //if input is only numbers in the form of milliseconds
     const dateReturn= new Date(parseInt(input));
     const utcString= dateReturn.toUTCString();
     console.log("return from unix: "+dateReturn);
-    res.json({utc:utcString,unix:input});
+    res.json({unix:parseInt(input),utc:utcString});
   }
   // const myURL= new URL(url);
  
